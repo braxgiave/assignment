@@ -1,93 +1,106 @@
-import React from 'react';
-import { Row, Form, Col, Button } from 'react-bootstrap';
+import React, { Component } from 'react';
+import './App.css';
+import { Container, Button, Alert } from 'react-bootstrap';
+import ProductList from './ProductList';
+import AddProduct from './AddProduct';
 
-class AddProduct extends React.Component {
+class App extends Component {
   constructor(props) {
     super(props);
-    this.initialState = {
-      id: '',
-      productName: '',
-      price: '',
-      sku: ''
+    this.state = {
+      isAddProduct: false,
+      error: null,
+      response: {},
+      product: {},
+      isEditProduct: false
     }
+    this.onFormSubmit = this.onFormSubmit.bind(this);
+  }
 
-    if(props.product){
-      this.state = props.product
+  onCreate() {
+    this.setState({ isAddProduct: true });
+  }
+
+  onFormSubmit(data) {
+    let apiUrl;
+
+    if(this.state.isEditProduct){
+      apiUrl = 'http://localhost/dev/tcxapp/reactapi/editProduct';
     } else {
-      this.state = this.initialState;
+      apiUrl = 'http://localhost/dev/tcxapp/reactapi/createProduct';
     }
 
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(data),
+      myHeaders
+    };
+
+    fetch(apiUrl, options)
+      .then(res => res.json())
+      .then(result => {
+        this.setState({
+          response: result,
+          isAddProduct: false,
+          isEditProduct: false
+        })
+      },
+      (error) => {
+        this.setState({ error });
+      }
+    )
   }
 
-  handleChange(event) {
-    const name = event.target.name;
-    const value = event.target.value;
+  editProduct = productId => {
 
-    this.setState({
-      [name]: value
-    })
-  }
+    const apiUrl = 'http://localhost/dev/tcxapp/reactapi/getProduct';
+    const formData = new FormData();
+    formData.append('productId', productId);
 
-  handleSubmit(event) {
-    event.preventDefault();
-    this.props.onFormSubmit(this.state);
-    this.setState(this.initialState);
+    const options = {
+      method: 'POST',
+      body: formData
+    }
+
+    fetch(apiUrl, options)
+      .then(res => res.json())
+      .then(
+        (result) => {
+          this.setState({
+            product: result,
+            isEditProduct: true,
+            isAddProduct: true
+          });
+        },
+        (error) => {
+          this.setState({ error });
+        }
+      )
   }
 
   render() {
 
-    let pageTitle;
-    if(this.state.id) {
-      pageTitle = <h2>Edit Product</h2>
-    } else {
-      pageTitle = <h2>Add Product</h2>
+    let productForm;
+    if(this.state.isAddProduct || this.state.isEditProduct) {
+      productForm = <AddProduct onFormSubmit={this.onFormSubmit} product={this.state.product} />
     }
 
-    return(
-      <div>
-        {pageTitle}
-        <Row>
-          <Col sm={6}>
-            <Form onSubmit={this.handleSubmit}>
-              <Form.Group controlId="productName">
-                <Form.Label>Product Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="productName"
-                  value={this.state.productName}
-                  onChange={this.handleChange}
-                  placeholder="Product Name"/>
-              </Form.Group>
-              <Form.Group controlId="sku">
-                <Form.Label>SKU</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="sku"
-                  value={this.state.sku}
-                  onChange={this.handleChange}
-                  placeholder="SKU" />
-              </Form.Group>
-              <Form.Group controlId="price">
-                <Form.Label>Price</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="price"
-                  value={this.state.price}
-                  onChange={this.handleChange}
-                  placeholder="Price" />
-              </Form.Group>
-              <Form.Group>
-                <Form.Control type="hidden" name="id" value={this.state.id} />
-                <Button variant="success" type="submit">Save</Button>
-              </Form.Group>
-            </Form>
-          </Col>
-        </Row>
+    return (
+      <div className="App">
+        <Container>
+          <h1 style={{textAlign:'center'}}>React Tutorial</h1>
+          {!this.state.isAddProduct && <Button variant="primary" onClick={() => this.onCreate()}>Add Product</Button>}
+          {this.state.response.status === 'success' && <div><br /><Alert variant="info">{this.state.response.message}</Alert></div>}
+          {!this.state.isAddProduct && <ProductList editProduct={this.editProduct}/>}
+          { productForm }
+          {this.state.error && <div>Error: {this.state.error.message}</div>}
+        </Container>
       </div>
-    )
+    );
   }
 }
 
-export default AddProduct;
+export default App;
