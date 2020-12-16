@@ -91,7 +91,7 @@ class App extends Component {
     return (
       <div className="App">
         <Container>
-          <h1 style={{textAlign:'center'}}>React Tutorial</h1>
+          <h1 style={{textAlign:'center'}}>Product List</h1>
           {!this.state.isAddProduct && <Button variant="primary" onClick={() => this.onCreate()}>Add Product</Button>}
           {this.state.response.status === 'success' && <div><br /><Alert variant="info">{this.state.response.message}</Alert></div>}
           {!this.state.isAddProduct && <ProductList editProduct={this.editProduct}/>}
